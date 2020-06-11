@@ -16,13 +16,13 @@ final class MoviesListViewModel: ObservableObject {
     
     private let input = PassthroughSubject<Event, Never>()
     
-    init() {
+    init(index: Int) {
         Publishers.system(
             initial: state,
             reduce: Self.reduce,
             scheduler: RunLoop.main,
             feedbacks: [
-                Self.whenLoading(),
+                Self.whenLoading(index: index),
                 Self.userInput(input: input.eraseToAnyPublisher())
             ]
         )
@@ -56,17 +56,7 @@ extension MoviesListViewModel {
         case onFailedToLoadMovies(Error)
     }
     
-    struct ListItem: Identifiable {
-        let id: Int
-        let title: String
-        let poster: URL?
-        
-        init(movie: MovieDTO) {
-            id = movie.id
-            title = movie.title
-            poster = movie.poster
-        }
-    }
+   
 }
 
 // MARK: - State Machine
@@ -97,15 +87,18 @@ extension MoviesListViewModel {
         }
     }
     
-    static func whenLoading() -> Feedback<State, Event> {
+    static func whenLoading(index: Int) -> Feedback<State, Event> {
+        
+        
         Feedback { (state: State) -> AnyPublisher<Event, Never> in
             guard case .loading = state else { return Empty().eraseToAnyPublisher() }
-            
-            return MoviesAPI.trending()
+              
+            return MoviesAPI.movieList()[index]
                 .map { $0.results.map(ListItem.init) }
                 .map(Event.onMoviesLoaded)
                 .catch { Just(Event.onFailedToLoadMovies($0)) }
                 .eraseToAnyPublisher()
+            
         }
     }
     
