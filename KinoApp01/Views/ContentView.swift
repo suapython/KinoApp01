@@ -9,8 +9,17 @@
 import SwiftUI
 
 struct ContentView: View {
+    let listArray: [Endpoint] = [.popular,.topRated,.upcoming,.nowPlaying,.trending]
+    
     var body: some View {
-        MoviesListView()
+        NavigationView {
+                   List {
+                ForEach(listArray, id: \.self) {list in
+                        MoviesListView(viewModel: MoviesListViewModel(list: list)  )
+                    }
+                }.navigationBarTitle(Text("Featured"))
+                
+        }
     }
 }
 

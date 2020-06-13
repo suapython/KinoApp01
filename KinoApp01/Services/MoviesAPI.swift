@@ -17,16 +17,11 @@ enum MoviesAPI {
     private static let agent = Agent()
    
     
-    static func movieList() -> [AnyPublisher<PageDTO<MovieDTO>, Error>] {
-        let listArray: [Endpoint] = [.popular,.topRated,.upcoming,.nowPlaying,.trending]
-        var temp: [AnyPublisher<PageDTO<MovieDTO>, Error>] = []
-        for list in listArray {
+    static func movieList(list: Endpoint ) -> AnyPublisher<PageDTO<MovieDTO>, Error> {
             let request = URLComponents(url: base.appendingPathComponent(list.path() ), resolvingAgainstBaseURL: true)?
             .addingApiKey(apiKey)
             .request
-            temp.append(agent.run(request!))
-        }
-        return temp
+        return agent.run(request!)
     }
     
     static func movieDetail(id: Int) -> AnyPublisher<MovieDetailDTO, Error> {

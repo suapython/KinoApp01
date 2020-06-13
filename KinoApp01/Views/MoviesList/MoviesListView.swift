@@ -10,7 +10,9 @@ import Combine
 import SwiftUI
 
 struct MoviesListView: View {
-    @ObservedObject var viewModel = MoviesListViewModel(index: 1)
+   let listArray: [Endpoint] = [.popular,.topRated,.upcoming,.nowPlaying,.trending]
+    
+    @ObservedObject var viewModel: MoviesListViewModel 
         
     var body: some View {
         NavigationView {
@@ -34,15 +36,28 @@ struct MoviesListView: View {
     }
     
     private func list(of movies: [ListItem]) -> some View {
-        return List{
+         
+        return  VStack(alignment: .leading){
+            Text("Popular")
+                           .font(.headline)
+                           .padding(.leading, 15)
+                           .padding(.top, 5)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 0) {
             ForEach(movies) {movie in
             NavigationLink(
                 destination: MovieDetailView(viewModel: MovieDetailViewModel(movieID: movie.id)),
                 label: { MovieListItemView(movie: movie) }
             )
                     }
-                }
-        
+                } 
+            }
     }
 }
+}
 
+struct MoviesListView_Previews: PreviewProvider {
+    static var previews: some View {
+        MoviesListView(viewModel: MoviesListViewModel(list: .popular))
+    }
+}

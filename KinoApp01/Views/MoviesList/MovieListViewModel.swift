@@ -10,19 +10,21 @@ import Foundation
 import Combine
 
 final class MoviesListViewModel: ObservableObject {
-    @Published private(set) var state = State.idle
+    @Published private(set) var state: State
     
     private var bag = Set<AnyCancellable>()
     
     private let input = PassthroughSubject<Event, Never>()
     
-    init(index: Int) {
+    init(list: Endpoint) {
+        state = .idle(list)
+        
         Publishers.system(
             initial: state,
             reduce: Self.reduce,
             scheduler: RunLoop.main,
             feedbacks: [
-                Self.whenLoading(index: index),
+                Self.whenLoading(),
                 Self.userInput(input: input.eraseToAnyPublisher())
             ]
         )
@@ -30,9 +32,9 @@ final class MoviesListViewModel: ObservableObject {
         .store(in: &bag)
     }
     
-    deinit {
-        bag.removeAll()
-    }
+   // deinit {
+     //   bag.removeAll()
+   // }
     
     func send(event: Event) {
         input.send(event)
@@ -43,20 +45,29 @@ final class MoviesListViewModel: ObservableObject {
 
 extension MoviesListViewModel {
     enum State {
-        case idle
-        case loading
+        case idle(Endpoint)
+        case loading(Endpoint)
         case loaded([ListItem])
         case error(Error)
     }
     
     enum Event {
         case onAppear
-        case onSelectMovie(Int)
+        case onSelectMovie(Endpoint)
         case onMoviesLoaded([ListItem])
         case onFailedToLoadMovies(Error)
     }
     
-   
+    struct MovieList {
+        let results:  [ListItem]
+        init(response: PageDTO<MovieDTO> ) {
+            results = response.results.map(ListItem.init)
+        }
+        
+    }
+    
+    
+    
 }
 
 // MARK: - State Machine
@@ -64,10 +75,10 @@ extension MoviesListViewModel {
 extension MoviesListViewModel {
     static func reduce(_ state: State, _ event: Event) -> State {
         switch state {
-        case .idle:
+        case .idle(let list):
             switch event {
             case .onAppear:
-                return .loading
+                return .loading(list)
             default:
                 return state
             }
@@ -87,13 +98,12 @@ extension MoviesListViewModel {
         }
     }
     
-    static func whenLoading(index: Int) -> Feedback<State, Event> {
-        
+    static func whenLoading() -> Feedback<State, Event> {
         
         Feedback { (state: State) -> AnyPublisher<Event, Never> in
-            guard case .loading = state else { return Empty().eraseToAnyPublisher() }
+            guard case .loading(let list) = state else { return Empty().eraseToAnyPublisher() }
               
-            return MoviesAPI.movieList()[index]
+            return MoviesAPI.movieList(list: list)
                 .map { $0.results.map(ListItem.init) }
                 .map(Event.onMoviesLoaded)
                 .catch { Just(Event.onFailedToLoadMovies($0)) }

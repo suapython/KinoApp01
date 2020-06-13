@@ -14,7 +14,6 @@ struct MovieListItemView: View {
 
     var body: some View {
         VStack {
-            title
             poster
         }
     }
@@ -35,7 +34,7 @@ struct MovieListItemView: View {
             )
         }
         .aspectRatio(contentMode: .fit)
-        .frame(idealHeight: UIScreen.main.bounds.width / 2 * 3) // 2:3 aspect ratio
+            .frame(height: 300) // 2:3 aspect ratio
     }
     
     private var spinner: some View {
